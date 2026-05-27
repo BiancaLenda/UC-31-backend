@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}TechFuture{% endblock %}</title>
+    <style>
+        :root {
+            --primary: #00bfff;
+            --dark: #0f172a;
+            --text: #334155;
+            --bg: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Navbar com efeito Glassmorphism */
+        header {
+            background-color: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px); /* Desfoque no fundo */
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 0 5%;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 75px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            cursor: pointer;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .menu {
+            display: flex;
+            gap: 5px;
+        }
+
+        .menu a {
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 10px 15px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative; /* Para o efeito da linha */
+            transition: color 0.3s;
+        }
+
+        /* Efeito de linha animada embaixo do link */
+        .menu a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 5px;
+            left: 15px;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .menu a:hover {
+            color: white;
+        }
+
+        .menu a:hover::after {
+            width: calc(100% - 30px);
+        }
+
+        main {
+            flex: 1;
+            padding: 60px 5%;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        footer {
+            background-color: #020617;
+            color: #64748b;
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 0.875rem;
+        }
+
+        /* Responsividade básica */
+        @media (max-width: 600px) {
+            .navbar { flex-direction: column; height: auto; padding: 20px 0; }
+            .menu { margin-top: 15px; flex-wrap: wrap; justify-content: center; }
+            .menu a { font-size: 0.85rem; padding: 5px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="navbar">
+            <div class="logo" onclick="window.location.href='/'">
+                Tech<span>Future</span>
+            </div>
+            <nav class="menu">
+                <a href="/">Início</a>
+                <a href="/cursos">Cursos</a>
+                <a href="/professores">Professores</a>
+                <a href="/contato">Contato</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="card">
+            {% block conteudo %}
+            <h1>Título da Página</h1>
+            <p>O conteúdo herdeiro aparecerá aqui com uma tipografia limpa e espaçamento equilibrado.</p>
+            {% endblock %}
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 TechFuture. Desenvolvido para a Excelência Técnica.</p>
+    </footer>
+</body>
+</html>
