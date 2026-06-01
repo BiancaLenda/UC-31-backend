@@ -2,24 +2,26 @@ from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
-@app.route('/cadastro', methods=['GET', 'POST'])
-def cadastro():
-    aviso = ""
+@app.route('/inscricao', methods=['GET', 'POST'])
+def inscricao():
+
+    mensagem = ""
 
     if request.method == 'POST':
-        gamer_tag = request.form.get('gamer_tag')
-        titulo = request.form.get('titulo')
-        contato = request.form.get('contato')
+        nickname = request.form.get('nickname')
+        jogo = request.form.get('jogo')
+        email = request.form.get('email')
 
-        if not gamer_tag or not titulo or not contato:
-            aviso = "Todos os campos devem ser preenchidos."
-        elif len(gamer_tag) < 4:
-            aviso = "A gamer tag precisa ter pelo menos 4 caracteres."
+        if not nickname or not jogo or not email:
+            mensagem = "Preencha todos os campos obrigatórios."
+
+        elif len(nickname) < 4:
+            mensagem = "Preencha todos os campos obrigatórios."
+
         else:
-            aviso = "Cadastro concluído com sucesso!"
+            mensagem = "Inscrição realizada com sucesso!"
 
-    return render_template('cadastro1.html', aviso=aviso)
+    return render_template('cadastro1.html', mensagem=mensagem)
 
 if __name__ == "__main__":
     app.run(debug=True)
-
