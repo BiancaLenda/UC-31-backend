@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro no Torneio</title>
+</head>
+<body>
+    <h1>Cadastro para Torneio de Games</h1>
+    <form method="post">
+        <label>Gamer Tag:</label><br>
+        <input type="text" name="gamer_tag"><br><br>
+
+        <label>Título do jogo:</label><br>
+        <select name="titulo">
+            <option value="">Escolha...</option>
+            <option value="Minecraft">Minecraft</option>
+            <option value="Free Fire">Free Fire</option>
+            <option value="PUBG">PUBG</option>
+            <option value="Rocket League">Rocket League</option>
+        </select><br><br>
+
+        <label>Contato (e-mail):</label><br>
+        <input type="email" name="contato"><br><br>
+
+        <button type="submit">Cadastrar</button>
+    </form>
+
+    <p>{{ aviso }}</p>
+</body>
+</html>
