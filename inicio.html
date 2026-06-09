@@ -1,85 +1,370 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <title>Document</title>
-    <style>
-         header {
-             background-color: #333;
-            color: #fff;
-            padding: 20px;
-            text-align: start;
-            font-size: larger;
-            font-weight: bolder;
-         }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Preferências do Usuário</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --radius: 12px;
+      --trans: 0.25s ease;
+      --fonte: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .tema-claro {
+      --bg:          #F0F4F8;
+      --bg-card:     #FFFFFF;
+      --bg-header:   #FFFFFF;
+      --borda:       #DDE3EC;
+      --texto:       #1A202C;
+      --texto-sub:   #4A5568;
+      --texto-muted: #718096;
+      --primario:    #4F46E5;
+      --primario-h:  #4338CA;
+      --sucesso:     #059669;
+      --input-bg:    #F7FAFC;
+      --sombra:      0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    }
+
+    .tema-escuro {
+      --bg:          #0F1117;
+      --bg-card:     #1A1D27;
+      --bg-header:   #13151F;
+      --borda:       #2D3148;
+      --texto:       #E8EAF0;
+      --texto-sub:   #A0A8C0;
+      --texto-muted: #6B7494;
+      --primario:    #6366F1;
+      --primario-h:  #818CF8;
+      --sucesso:     #34D399;
+      --input-bg:    #0F1117;
+      --sombra:      0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+    }
+
+    body {
+      font-family: var(--fonte);
+      background: var(--bg);
+      color: var(--texto);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background var(--trans), color var(--trans);
+    }
+
+    .cabecalho {
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--borda);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      transition: background var(--trans);
+    }
+
+    .cabecalho-inner {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primario);
+      letter-spacing: -.01em;
+    }
+
+    .btn-tema {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--borda);
+      background: transparent;
+      color: var(--texto-sub);
+      font-size: .85rem;
+      font-family: var(--fonte);
+      cursor: pointer;
+      transition: background var(--trans), color var(--trans), border-color var(--trans);
+    }
+
+    .btn-tema:hover {
+      background: var(--borda);
+      color: var(--texto);
+    }
+
+    .conteudo {
+      flex: 1;
+      max-width: 680px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .saudacao {
+      padding: 40px 0 8px;
+    }
+
+    .etiqueta {
+      font-size: .75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--primario);
+      margin-bottom: 10px;
+    }
+
+    .titulo {
+      font-size: clamp(1.8rem, 5vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      line-height: 1.15;
+      color: var(--texto);
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-size: 1rem;
+      color: var(--texto-sub);
+      line-height: 1.6;
+    }
+
+    .link-limpar {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: .8rem;
+      color: var(--texto-muted);
+      text-decoration: none;
+      border-bottom: 1px dashed var(--borda);
+      transition: color var(--trans);
+    }
+
+    .link-limpar:hover { color: var(--texto); }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--borda);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--sombra);
+      transition: background var(--trans), border-color var(--trans);
+    }
+
+    .card-titulo {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--texto);
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: .875rem;
+      color: var(--texto-muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .formulario {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .campo-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .campo-label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--texto-sub);
+      letter-spacing: .02em;
+    }
+
+    .campo-input {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1.5px solid var(--borda);
+      background: var(--input-bg);
+      color: var(--texto);
+      font-size: .95rem;
+      font-family: var(--fonte);
+      outline: none;
+      transition: border-color var(--trans), background var(--trans);
+      width: 100%;
+    }
+
+    .campo-input::placeholder { color: var(--texto-muted); }
+
+    .campo-input:focus {
+      border-color: var(--primario);
+      background: var(--bg-card);
+    }
+
+    .btn-primario {
+      align-self: flex-start;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primario);
+      color: #fff;
+      font-size: .9rem;
+      font-weight: 600;
+      font-family: var(--fonte);
+      cursor: pointer;
+      transition: background var(--trans), transform .1s;
+    }
+
+    .btn-primario:hover  { background: var(--primario-h); }
+    .btn-primario:active { transform: scale(.98); }
+
+    .status-lista {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--borda);
+    }
+
+    .status-item:last-child { border-bottom: none; }
+
+    .status-chave {
+      font-size: .875rem;
+      color: var(--texto-muted);
+    }
+
+    .status-valor {
+      font-size: .875rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--borda);
+      color: var(--texto-sub);
+    }
+
+    .status-valor.ativo {
+      background: color-mix(in srgb, var(--sucesso) 15%, transparent);
+      color: var(--sucesso);
+    }
+
+    .status-valor.vazio {
+      background: color-mix(in srgb, var(--texto-muted) 10%, transparent);
+      color: var(--texto-muted);
+    }
+
+    .rodape {
+      text-align: center;
+      padding: 20px;
+      font-size: .78rem;
+      color: var(--texto-muted);
+      border-top: 1px solid var(--borda);
+    }
+
+    @media (max-width: 480px) {
+      .conteudo        { padding: 32px 16px 48px; }
+      .card            { padding: 20px; }
+      .cabecalho-inner { padding: 0 16px; }
+    }
+  </style>
 </head>
-<body>
-    <header>
-        <p>Come y Come</p>
-    </header>
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">Come y Come</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="#">Home</a>
+<body class="tema-{{ tema }}">
+
+  <header class="cabecalho">
+    <div class="cabecalho-inner">
+      <span class="logo">⚙ Preferências</span>
+      <form action="/alterar-tema" method="POST">
+        <button type="submit" class="btn-tema">
+          {% if tema == 'claro' %}
+            <span>🌙</span> Tema Escuro
+          {% else %}
+            <span>☀️</span> Tema Claro
+          {% endif %}
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <main class="conteudo">
+
+    <section class="saudacao">
+      {% if nome %}
+        <p class="etiqueta">Bem-vindo de volta</p>
+        <h1 class="titulo">Olá, {{ nome }}! 👋</h1>
+        <p class="subtitulo">Suas preferências foram restauradas automaticamente.</p>
+        <a href="/limpar" class="link-limpar">Limpar dados salvos</a>
+      {% else %}
+        <p class="etiqueta">Primeira visita</p>
+        <h1 class="titulo">Bem-vindo!</h1>
+        <p class="subtitulo">Informe seu nome para uma experiência personalizada.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2 class="card-titulo">
+        {% if nome %}Atualizar nome{% else %}Cadastrar nome{% endif %}
+      </h2>
+      <p class="card-desc">Seu nome será salvo em um cookie e lembrado nas próximas visitas.</p>
+      <form action="/salvar-nome" method="POST" class="formulario">
+        <div class="campo-grupo">
+          <label for="nome" class="campo-label">Seu nome</label>
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            class="campo-input"
+            placeholder="Ex: Maria Silva"
+            value="{{ nome }}"
+            required
+          />
+        </div>
+        <button type="submit" class="btn-primario">Salvar nome</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2 class="card-titulo">Status dos Cookies</h2>
+      <ul class="status-lista">
+        <li class="status-item">
+          <span class="status-chave">Nome salvo</span>
+          <span class="status-valor {% if nome %}ativo{% else %}vazio{% endif %}">
+            {% if nome %}{{ nome }}{% else %}Não definido{% endif %}
+          </span>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Link</a>
+        <li class="status-item">
+          <span class="status-chave">Tema atual</span>
+          <span class="status-valor ativo">
+            {% if tema == 'claro' %}☀️ Claro{% else %}🌙 Escuro{% endif %}
+          </span>
         </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Dropdown
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
-          </ul>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+        <li class="status-item">
+          <span class="status-chave">Validade</span>
+          <span class="status-valor ativo">30 dias</span>
         </li>
       </ul>
-    </div>
-  </div>
-</nav>
+    </section>
 
-<div id="carouselExampleIndicators" class="carousel slide">
-  <div class="carousel-indicators">
-    <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-    <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1" aria-label="Slide 2"></button>
-    <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
-  </div>
-  <div class="carousel-inner">
-    <div class="carousel-item active">
-      <img src="{{ url_for('static',filename='comida vermelho.png')}}" class="d-block w-100">
-    </div>
-    <div class="carousel-item">
-      <img src="{{ url_for('static',filename='comida amarela.png')}}" class="d-block w-100">
-    </div>
-    <div class="carousel-item">
-      <img src="{{ url_for('static',filename='pizza.png')}}" class="d-block w-100">
-    </div>
-  </div>
-  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Previous</span>
-  </button>
-  <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
-    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Next</span>
-  </button>
-</div>
+  </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <footer class="rodape">
+    <p>Flask + Cookies &mdash; Preferências do Usuário</p>
+  </footer>
+
 </body>
 </html>
