@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Início</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="page">
+        <div class="card">
+            <span class="badge">🔒 Acesso restrito</span>
+            <h1>Bem-vindo(a) ao nosso site!</h1>
+            <p class="subtitle">Esta é a página inicial da aplicação.</p>
+            <a class="btn" href="{{ url_for('login') }}">Ir para o Login</a>
+        </div>
+    </div>
+</body>
+</html>
