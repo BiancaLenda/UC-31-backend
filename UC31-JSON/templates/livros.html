@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Livros Cadastrados{% endblock %}
+{% block conteudo %}
+<h1>Livros Cadastrados</h1>
+
+{% if livros|length == 0 %}
+    <p class="vazio">Nenhum livro cadastrado.</p>
+{% else %}
+<table>
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Autor</th>
+            <th>Ano</th>
+            <th>Categoria</th>
+            <th>Quantidade</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for livro in livros %}
+        <tr>
+            <td>{{ livro.titulo }}</td>
+            <td>{{ livro.autor }}</td>
+            <td>{{ livro.ano }}</td>
+            <td>{{ livro.categoria }}</td>
+            <td>{{ livro.quantidade }}</td>
+            <td class="acoes">
+                <a class="botao botao-editar" href="{{ url_for('editar_livro', indice=loop.index0) }}">Editar</a>
+                <a class="botao botao-excluir" href="{{ url_for('excluir_livro', indice=loop.index0) }}"
+                   onclick="return confirm('Tem certeza que deseja excluir este livro?');">Excluir</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
