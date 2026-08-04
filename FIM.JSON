@@ -1,0 +1,219 @@
+const {
+  h1, h2, h3, p, pMixed, bullet, boldLead, codeBlock, spacer, simpleTable,
+} = require("./build_doc.js");
+
+function section3() {
+  return [
+    h1("3. Gerenciamento de Sessão"),
+    p(
+      "O objeto session do Flask fornece uma interface do tipo dicionário que permite armazenar dados associados a um usuário específico entre diferentes requisições, simulando um estado persistente sobre o protocolo HTTP, que é, por natureza, sem estado (stateless)."
+    ),
+    codeBlock([
+      "from flask import session",
+      "",
+      "app.secret_key = 'uma-chave-secreta-bem-forte-e-aleatoria'",
+      "",
+      "@app.route('/entrar', methods=['POST'])",
+      "def entrar():",
+      "    session['usuario_id'] = 42",
+      "    session['autenticado'] = True",
+      "    return redirect(url_for('painel'))",
+      "",
+      "@app.route('/painel')",
+      "def painel():",
+      "    if not session.get('autenticado'):",
+      "        return redirect(url_for('entrar'))",
+      "    return f\"Usuário {session['usuario_id']} logado\"",
+    ]),
+    h2("3.1 Como os dados são armazenados"),
+    p(
+      "Por padrão, o Flask utiliza sessões inteiramente do lado do cliente (client-side sessions). Isso significa que os dados colocados em session não ficam guardados no servidor, mas sim serializados, assinados criptograficamente e enviados ao navegador dentro de um único cookie chamado, por padrão, session. A cada nova requisição, o navegador reenvia esse cookie, e o Flask o decodifica e verifica a assinatura para reconstruir o dicionário de sessão."
+    ),
+    p(
+      "O processo, de forma resumida, funciona assim: o conteúdo do dicionário de sessão é serializado (o Flask utiliza um esquema baseado em JSON) e, em seguida, empacotado pela biblioteca itsdangerous, responsável por assinar os dados. O resultado — dados codificados em base64 concatenados com uma assinatura — é o valor efetivo do cookie."
+    ),
+    h2("3.2 O papel da SECRET_KEY"),
+    p(
+      "A configuração SECRET_KEY (definida em app.config['SECRET_KEY'] ou app.secret_key) é a chave usada pelo itsdangerous para gerar a assinatura HMAC dos dados de sessão. Ela não é usada para criptografar (esconder) o conteúdo, mas sim para garantir integridade e autenticidade: qualquer tentativa de alterar o conteúdo do cookie no lado do cliente invalida a assinatura, fazendo com que o Flask rejeite e descarte a sessão na requisição seguinte."
+    ),
+    p(
+      "Por esse motivo, a SECRET_KEY deve ser um valor longo, aleatório e mantido em segredo (idealmente carregado de uma variável de ambiente, nunca versionado em repositórios públicos). Caso essa chave seja exposta, um atacante pode forjar cookies de sessão válidos, assinando dados arbitrários — por exemplo, marcando-se como um usuário administrador."
+    ),
+    h2("3.3 Assinatura criptográfica dos cookies"),
+    p(
+      "A assinatura é implementada por meio de um HMAC (Hash-based Message Authentication Code), tipicamente combinado com SHA-1 ou SHA-256 conforme a configuração do serializer utilizado pelo itsdangerous. O fluxo é o seguinte: os dados da sessão são serializados; um HMAC é calculado sobre esses dados usando a SECRET_KEY; o valor final do cookie combina os dados codificados e o HMAC calculado, normalmente separados por um ponto, no formato usado pela classe URLSafeTimedSerializer."
+    ),
+    p(
+      "É importante destacar que essa assinatura garante apenas integridade, não confidencialidade: como os dados estão apenas codificados em base64 (não criptografados), qualquer pessoa com acesso ao cookie pode decodificar e ler seu conteúdo, ainda que não consiga modificá-lo sem invalidar a assinatura. Por isso, dados sensíveis (senhas, números de cartão, tokens de terceiros) nunca devem ser armazenados diretamente na sessão padrão do Flask."
+    ),
+    h2("3.4 Limitações da sessão padrão do Flask"),
+    bullet(
+      "Tamanho limitado: como o cookie trafega em cada requisição, o navegador impõe um limite de aproximadamente 4 KB por cookie, restringindo a quantidade de dados armazenáveis."
+    ),
+    bullet(
+      "Ausência de confidencialidade: os dados são visíveis (embora não editáveis) por qualquer pessoa com acesso ao cookie, já que estão apenas assinados, não criptografados."
+    ),
+    bullet(
+      "Impossibilidade de invalidação individual: como o servidor não guarda estado, não há uma forma nativa de \"derrubar\" a sessão de um usuário específico remotamente (por exemplo, ao suspeitar de comprometimento de conta) sem trocar a SECRET_KEY inteira, o que invalidaria todas as sessões ativas de todos os usuários."
+    ),
+    bullet(
+      "Overhead de rede: por ser reenviada em toda requisição, uma sessão grande aumenta o tamanho de cada requisição HTTP."
+    ),
+    bullet(
+      "Dependência total da SECRET_KEY: a segurança de toda a sessão depende exclusivamente do sigilo dessa chave."
+    ),
+    p(
+      "Para superar essas limitações, é comum adotar sessões do lado do servidor (server-side sessions), por meio de extensões como Flask-Session, que armazenam o conteúdo da sessão em um backend como Redis, banco de dados relacional ou sistema de arquivos, mantendo no cookie apenas um identificador (session ID) opaco e curto."
+    ),
+    h2("3.5 Session, Cookies e armazenamento em banco de dados"),
+    simpleTable(
+      ["Aspecto", "Session (padrão Flask)", "Cookies (uso genérico)", "Armazenamento em banco de dados"],
+      [
+        [
+          "Onde os dados ficam",
+          "Serializados e assinados dentro do próprio cookie, no navegador do cliente",
+          "Qualquer dado definido pela aplicação, no navegador do cliente",
+          "No servidor; o cliente guarda apenas um identificador",
+        ],
+        [
+          "Segurança do conteúdo",
+          "Íntegro (assinado), mas legível por quem tiver o cookie",
+          "Depende inteiramente da aplicação; pode ser adulterado se não for assinado",
+          "Alta: dados nunca saem do servidor",
+        ],
+        [
+          "Limite de tamanho",
+          "~4 KB (limite de cookie)",
+          "~4 KB por cookie",
+          "Limitado apenas pelo banco de dados",
+        ],
+        [
+          "Revogação individual",
+          "Não é possível de forma nativa",
+          "Não se aplica diretamente",
+          "Simples: basta remover/expirar o registro no servidor",
+        ],
+        [
+          "Uso típico",
+          "Estado de login simples em aplicações pequenas/médias",
+          "Preferências de interface, tracking, tokens diversos",
+          "Aplicações com múltiplos servidores, necessidade de auditoria e revogação",
+        ],
+      ],
+      [1600, 2600, 2500, 2650]
+    ),
+    p(
+      "Em resumo: cookies são o mecanismo de transporte básico do navegador; a session do Flask é uma abstração construída sobre cookies, adicionando serialização e assinatura; e o armazenamento em banco de dados é uma estratégia de sessão do lado do servidor, na qual o cookie carrega apenas uma referência, e não os dados propriamente ditos, favorecendo segurança, escalabilidade e controle administrativo sobre a validade das sessões."
+    ),
+  ];
+}
+
+function section4() {
+  return [
+    h1("4. Autenticação de Usuários"),
+    p(
+      "Autenticação é o processo de verificar a identidade de quem está fazendo uma requisição. Em aplicações Flask, três estratégias são particularmente comuns: sessão tradicional baseada em cookies, tokens JWT e delegação de identidade via OAuth 2.0. Cada uma resolve o problema de formas distintas, com implicações diferentes em termos de estado, escalabilidade e superfície de ataque."
+    ),
+    h2("4.1 Session tradicional"),
+    p(
+      "Nesse modelo — geralmente implementado com a extensão Flask-Login sobre o mecanismo de session descrito na seção anterior — o usuário envia suas credenciais (usuário e senha) uma única vez. O servidor valida essas credenciais e grava um identificador do usuário autenticado na sessão. Em requisições subsequentes, o cookie de sessão é enviado automaticamente pelo navegador, e o servidor confia nesse cookie assinado para reconhecer o usuário, sem exigir novo login."
+    ),
+    codeBlock([
+      "from flask_login import LoginManager, login_user, login_required, current_user",
+      "",
+      "login_manager = LoginManager(app)",
+      "",
+      "@app.route('/entrar', methods=['POST'])",
+      "def entrar():",
+      "    usuario = validar_credenciais(request.form)",
+      "    login_user(usuario)   # grava o ID do usuário na session",
+      "    return redirect(url_for('painel'))",
+      "",
+      "@app.route('/painel')",
+      "@login_required",
+      "def painel():",
+      "    return f'Olá, {current_user.nome}'",
+    ]),
+    boldLead("Vantagens: ", "simplicidade de implementação; revogação de acesso trivial (basta invalidar a sessão no servidor, quando armazenada server-side); adequado para aplicações web tradicionais renderizadas no próprio servidor."),
+    boldLead("Desvantagens: ", "modelo stateful, que exige que o servidor (ou um armazenamento compartilhado) mantenha o estado da sessão; dificulta a escalabilidade horizontal sem um backend de sessão compartilhado (ex.: Redis); menos natural para consumo por clientes não-navegador, como aplicativos móveis ou integrações entre serviços."),
+    boldLead("Quando usar: ", "aplicações web monolíticas, painéis administrativos e sistemas onde o mesmo servidor Flask renderiza as páginas e controla o login, sem necessidade de expor uma API para terceiros."),
+    h2("4.2 JWT (JSON Web Token)"),
+    p(
+      "No modelo baseado em JWT, após a validação das credenciais, o servidor gera um token assinado digitalmente (tipicamente com HMAC-SHA256 ou um par de chaves RSA/ECDSA) contendo, em seu payload, informações (claims) como o identificador do usuário, permissões e um tempo de expiração. Esse token é devolvido ao cliente, que passa a enviá-lo em cada requisição subsequente, normalmente no cabeçalho Authorization: Bearer <token>. O servidor não precisa guardar nenhum estado: basta validar a assinatura e a expiração do token a cada requisição para confiar em seu conteúdo."
+    ),
+    codeBlock([
+      "import jwt, datetime",
+      "",
+      "@app.route('/entrar', methods=['POST'])",
+      "def entrar():",
+      "    usuario = validar_credenciais(request.form)",
+      "    payload = {",
+      "        'sub': usuario.id,",
+      "        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=2)",
+      "    }",
+      "    token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')",
+      "    return {'access_token': token}",
+      "",
+      "@app.route('/perfil')",
+      "def perfil():",
+      "    token = request.headers.get('Authorization', '').replace('Bearer ', '')",
+      "    dados = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])",
+      "    return f\"Usuário {dados['sub']}\"",
+    ]),
+    boldLead("Vantagens: ", "stateless — qualquer servidor da aplicação pode validar o token de forma independente, sem consultar um armazenamento compartilhado, o que favorece a escalabilidade horizontal; adequado para APIs consumidas por aplicativos móveis, single-page applications e integrações entre serviços (microsserviços)."),
+    boldLead("Desvantagens: ", "revogação antes da expiração é difícil, já que o servidor não mantém uma lista central de tokens válidos (exige soluções adicionais, como listas de bloqueio); tokens tendem a ser maiores que um simples ID de sessão, aumentando o tamanho das requisições; se mal configurado (ex.: algoritmo 'none' aceito, chave fraca), abre uma superfície de ataque significativa."),
+    boldLead("Quando usar: ", "APIs REST, arquiteturas de microsserviços e aplicações onde o backend Flask precisa permanecer stateless, ou quando diferentes serviços/domínios precisam validar a identidade do usuário de forma independente."),
+    h2("4.3 OAuth 2.0"),
+    p(
+      "OAuth 2.0 não é, em si, um mecanismo de autenticação, mas sim um framework de autorização que permite que uma aplicação obtenha acesso limitado a recursos de um usuário em outro serviço (o provedor de identidade, como Google, GitHub ou Microsoft), sem que a aplicação jamais tenha acesso à senha do usuário nesse serviço terceiro. Na prática, é frequentemente combinado com OpenID Connect (uma camada de identidade construída sobre o OAuth 2.0) para viabilizar autenticação (\"login social\")."
+    ),
+    p(
+      "O fluxo mais comum em aplicações Flask é o Authorization Code Flow: a aplicação redireciona o usuário para a tela de login do provedor; o usuário autentica-se e autoriza a aplicação; o provedor redireciona de volta com um código de autorização temporário; o backend Flask troca esse código por um access token (e, opcionalmente, um refresh token) diretamente com o provedor, em uma chamada servidor a servidor."
+    ),
+    codeBlock([
+      "from authlib.integrations.flask_client import OAuth",
+      "",
+      "oauth = OAuth(app)",
+      "google = oauth.register(",
+      "    name='google',",
+      "    client_id='...',",
+      "    client_secret='...',",
+      "    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',",
+      "    client_kwargs={'scope': 'openid email profile'}",
+      ")",
+      "",
+      "@app.route('/entrar/google')",
+      "def entrar_google():",
+      "    redirect_uri = url_for('callback_google', _external=True)",
+      "    return google.authorize_redirect(redirect_uri)",
+      "",
+      "@app.route('/callback/google')",
+      "def callback_google():",
+      "    token = google.authorize_access_token()",
+      "    usuario_info = google.get('userinfo').json()",
+      "    session['usuario'] = usuario_info",
+      "    return redirect(url_for('painel'))",
+    ]),
+    boldLead("Vantagens: ", "elimina a necessidade de a aplicação armazenar e proteger senhas dos usuários; aproveita a infraestrutura de segurança (autenticação multifator, detecção de anomalias) do provedor de identidade; melhora a experiência do usuário ao permitir login com contas já existentes."),
+    boldLead("Desvantagens: ", "protocolo mais complexo de implementar corretamente (múltiplos fluxos, tratamento de tokens, validação de estado/CSRF durante o redirecionamento); introduz uma dependência de disponibilidade em relação ao provedor externo; exige atenção redobrada a detalhes de segurança, como validação do parâmetro state para prevenir ataques de CSRF durante o fluxo de autorização."),
+    boldLead("Quando usar: ", "quando se deseja oferecer login social; quando a aplicação precisa acessar recursos de terceiros em nome do usuário (por exemplo, ler eventos do Google Calendar); em cenários corporativos com Single Sign-On (SSO) integrado a um provedor de identidade centralizado."),
+    h2("4.4 Comparativo entre as abordagens"),
+    simpleTable(
+      ["Critério", "Session tradicional", "JWT", "OAuth 2.0"],
+      [
+        ["Estado no servidor", "Stateful (ou server-side store)", "Stateless", "Depende da camada de sessão local da aplicação"],
+        ["Escalabilidade horizontal", "Requer store compartilhado", "Alta, nativa", "Alta, nativa (após obtenção do token)"],
+        ["Revogação imediata", "Fácil (server-side)", "Difícil", "Possível revogar no provedor"],
+        ["Complexidade de implementação", "Baixa", "Média", "Alta"],
+        ["Público típico", "Apps web renderizadas no servidor", "APIs/SPAs/mobile/microsserviços", "Login social / integrações de terceiros"],
+        ["Onde ficam as credenciais", "No próprio servidor da aplicação", "No próprio servidor da aplicação", "No provedor de identidade externo"],
+      ],
+      [1900, 2450, 2300, 2700]
+    ),
+    p(
+      "Na prática, essas abordagens não são mutuamente exclusivas: é comum, por exemplo, usar OAuth 2.0 apenas para autenticar o usuário via login social e, a partir daí, emitir uma sessão tradicional (ou um JWT próprio da aplicação) para gerenciar o restante da interação, combinando os pontos fortes de cada estratégia conforme a necessidade do sistema."
+    ),
+  ];
+}
+
+module.exports = { section3, section4 };

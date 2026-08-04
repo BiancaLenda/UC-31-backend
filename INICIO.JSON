@@ -1,0 +1,269 @@
+const {
+  h1, h2, h3, p, pMixed, bullet, boldLead, codeBlock, spacer, simpleTable,
+} = require("./build_doc.js");
+
+function section1() {
+  return [
+    h1("1. Sistema de Rotas"),
+    p(
+      "No Flask, o roteamento é a mecânica responsável por associar uma URL requisitada pelo cliente a uma função Python específica, chamada de view function. Essa associação é feita por meio do decorator @app.route(), que na verdade é uma camada de conveniência sobre o sistema de roteamento da biblioteca Werkzeug — dependência central sobre a qual o Flask é construído. Internamente, cada chamada a @app.route() registra uma nova Rule no objeto url_map da aplicação (uma instância de werkzeug.routing.Map). Quando uma requisição HTTP chega, o Flask consulta esse mapa de URLs, encontra a regra correspondente ao caminho e ao método solicitados, e despacha a chamada para a função associada."
+    ),
+    codeBlock([
+      "from flask import Flask",
+      "",
+      "app = Flask(__name__)",
+      "",
+      "@app.route('/sobre')",
+      "def sobre():",
+      "    return 'Página institucional'",
+    ]),
+    h2("1.1 Rotas estáticas"),
+    p(
+      "Rotas estáticas são aquelas cujo caminho é fixo, ou seja, não contêm partes variáveis. Elas correspondem exatamente a uma única URL. São adequadas para páginas fixas como a página inicial, uma página \"sobre\" ou um endpoint de status de saúde da aplicação (health check)."
+    ),
+    codeBlock([
+      "@app.route('/')",
+      "def index():",
+      "    return 'Página inicial'",
+      "",
+      "@app.route('/contato')",
+      "def contato():",
+      "    return 'Fale conosco'",
+    ]),
+    h2("1.2 Rotas dinâmicas"),
+    p(
+      "Rotas dinâmicas contêm segmentos variáveis delimitados por chaves (<variavel>). O valor capturado nesse segmento é automaticamente passado como argumento para a view function, permitindo que uma mesma função atenda a um conjunto amplo de URLs, como perfis de usuário, artigos de blog ou recursos identificados por um ID."
+    ),
+    codeBlock([
+      "@app.route('/usuario/<nome>')",
+      "def perfil(nome):",
+      "    return f'Perfil de {nome}'",
+      "",
+      "# /usuario/joao -> 'Perfil de joao'",
+      "# /usuario/maria -> 'Perfil de maria'",
+    ]),
+    p(
+      "Por padrão, sem um conversor explícito, o valor capturado é tratado como string e não pode conter barras (/), pois a barra é interpretada como separador de segmentos de URL."
+    ),
+    h2("1.3 Conversores de URL"),
+    p(
+      "Os conversores (converters) definem o tipo de dado esperado em um segmento dinâmico e, além de restringir o que a rota aceita, já convertem o valor para o tipo Python correspondente antes de repassá-lo à view function. A sintaxe é <conversor:nome_variavel>. O Flask/Werkzeug oferece nativamente os conversores a seguir."
+    ),
+    h3("int"),
+    p(
+      "Aceita apenas números inteiros positivos e converte automaticamente o valor para o tipo int do Python. É amplamente usado para identificadores numéricos, como o ID de um registro em banco de dados."
+    ),
+    codeBlock([
+      "@app.route('/produto/<int:produto_id>')",
+      "def produto(produto_id):",
+      "    # produto_id já chega como int",
+      "    return f'Produto número {produto_id}'",
+      "",
+      "# /produto/42   -> OK, produto_id = 42",
+      "# /produto/abc  -> 404 Not Found (não confere com o padrão)",
+    ]),
+    h3("float"),
+    p(
+      "Aceita números decimais positivos (com ponto), convertendo-os para float. É útil para representar valores como preços, coordenadas geográficas ou pesos."
+    ),
+    codeBlock([
+      "@app.route('/preco/<float:valor>')",
+      "def preco(valor):",
+      "    return f'Valor recebido: {valor:.2f}'",
+      "",
+      "# /preco/19.90 -> Valor recebido: 19.90",
+    ]),
+    h3("path"),
+    p(
+      "Semelhante ao conversor padrão de string, mas aceita barras (/) dentro do valor capturado, tratando o segmento inteiro (incluindo múltiplos níveis de diretório) como uma única variável. É comum em rotas que servem arquivos ou replicam estruturas de diretório."
+    ),
+    codeBlock([
+      "@app.route('/arquivos/<path:caminho>')",
+      "def arquivos(caminho):",
+      "    return f'Caminho solicitado: {caminho}'",
+      "",
+      "# /arquivos/docs/2024/relatorio.pdf",
+      "# caminho = 'docs/2024/relatorio.pdf'",
+    ]),
+    h3("uuid"),
+    p(
+      "Aceita apenas strings no formato de UUID (Universally Unique Identifier), como \"550e8400-e29b-41d4-a716-446655440000\", e as converte em um objeto Python uuid.UUID. É indicado para sistemas que utilizam identificadores universais em vez de IDs sequenciais, prática comum em arquiteturas distribuídas."
+    ),
+    codeBlock([
+      "@app.route('/pedido/<uuid:pedido_id>')",
+      "def pedido(pedido_id):",
+      "    return f'Pedido {pedido_id}'",
+    ]),
+    p(
+      "Além desses, o Werkzeug também disponibiliza o conversor string (padrão implícito, sem barras) e any, que permite restringir o valor a uma lista fixa de alternativas (ex.: <any(comprar, vender):acao>)."
+    ),
+    h2("1.4 Métodos HTTP"),
+    p(
+      "Por padrão, uma rota criada com @app.route() responde apenas a requisições GET (e, implicitamente, a HEAD e OPTIONS, geradas automaticamente pelo Flask). Para que uma rota aceite outros verbos, é necessário declará-los explicitamente no parâmetro methods. Cada verbo HTTP carrega uma semântica própria dentro do estilo arquitetural REST:"
+    ),
+    boldLead(
+      "GET — ",
+      "usado para solicitar a representação de um recurso. Não deve produzir efeitos colaterais no servidor (é considerado seguro e idempotente); os parâmetros normalmente são enviados via query string e ficam acessíveis por request.args."
+    ),
+    boldLead(
+      "POST — ",
+      "usado para criar um novo recurso ou submeter dados que resultam em mudança de estado no servidor. Não é idempotente: enviar a mesma requisição duas vezes pode criar dois recursos distintos. Os dados costumam vir no corpo da requisição, acessíveis por request.form ou request.json."
+    ),
+    boldLead(
+      "PUT — ",
+      "usado para atualizar (ou criar, quando o cliente define o identificador) um recurso por completo, substituindo seu estado atual pela representação enviada. É idempotente: repetir a mesma chamada PUT produz o mesmo resultado final."
+    ),
+    boldLead(
+      "DELETE — ",
+      "usado para remover um recurso identificado pela URL. Também é considerado idempotente, já que remover um recurso já removido não altera o resultado (o recurso continua ausente)."
+    ),
+    boldLead(
+      "PATCH — ",
+      "usado para aplicar uma atualização parcial a um recurso, alterando apenas os campos informados, ao invés de substituir o recurso inteiro como o PUT faz. Não é necessariamente idempotente, dependendo da natureza da alteração."
+    ),
+    codeBlock([
+      "@app.route('/tarefas/<int:tarefa_id>', methods=['GET', 'PUT', 'PATCH', 'DELETE'])",
+      "def tarefa(tarefa_id):",
+      "    if request.method == 'GET':",
+      "        return buscar_tarefa(tarefa_id)",
+      "    elif request.method == 'PUT':",
+      "        return substituir_tarefa(tarefa_id, request.json)",
+      "    elif request.method == 'PATCH':",
+      "        return atualizar_parcial(tarefa_id, request.json)",
+      "    elif request.method == 'DELETE':",
+      "        return remover_tarefa(tarefa_id)",
+      "",
+      "@app.route('/tarefas', methods=['POST'])",
+      "def criar_tarefa():",
+      "    return salvar_tarefa(request.json), 201",
+    ]),
+    p(
+      "É comum, em APIs maiores, dividir cada método em uma view function separada usando app.get(), app.post(), app.put(), app.delete() e app.patch() — atalhos introduzidos a partir do Flask 2.0 que tornam o código mais legível do que concentrar tudo em uma única função com múltiplos ifs."
+    ),
+    h2("1.5 url_for() versus URLs escritas manualmente"),
+    p(
+      "A função url_for() gera dinamicamente a URL de uma rota a partir do nome (endpoint) da view function, em vez de exigir que o desenvolvedor escreva o caminho literal. Ela consulta o mesmo url_map usado no roteamento e reconstrói a URL correspondente, incluindo os valores de variáveis dinâmicas passados como argumentos."
+    ),
+    codeBlock([
+      "@app.route('/usuario/<int:user_id>')",
+      "def perfil(user_id):",
+      "    return f'Usuário {user_id}'",
+      "",
+      "# Em vez de escrever a URL manualmente:",
+      "link_manual = '/usuario/7'",
+      "",
+      "# Usa-se url_for, referenciando o nome da função:",
+      "link_dinamico = url_for('perfil', user_id=7)  # -> '/usuario/7'",
+    ]),
+    p(
+      "As principais vantagens de utilizar url_for() em vez de escrever URLs manualmente são:"
+    ),
+    bullet(
+      "Desacoplamento: se o caminho de uma rota for alterado futuramente (por exemplo, de /usuario/<id> para /perfil/<id>), todas as chamadas a url_for('perfil', ...) continuam funcionando sem qualquer alteração, enquanto URLs escritas manualmente quebrariam silenciosamente."
+    ),
+    bullet(
+      "Correção automática de escaping: url_for() escapa corretamente caracteres especiais nos valores das variáveis, evitando URLs malformadas ou vulneráveis a injeção."
+    ),
+    bullet(
+      "Suporte a Blueprints: em aplicações organizadas em módulos (Blueprints), url_for() resolve automaticamente o prefixo do módulo (ex.: 'admin.dashboard'), algo inviável de manter manualmente em projetos grandes."
+    ),
+    bullet(
+      "Geração de URLs absolutas: com o parâmetro _external=True, url_for() pode gerar a URL completa, incluindo esquema e domínio, útil para e-mails, redirecionamentos externos ou webhooks."
+    ),
+    p(
+      "Escrever URLs manualmente (\"hardcoded\") é aceitável apenas para links realmente externos e fixos; para qualquer rota interna da própria aplicação, a prática recomendada pela documentação oficial e pela comunidade Flask é sempre utilizar url_for()."
+    ),
+  ];
+}
+
+function section2() {
+  return [
+    h1("2. Requisições e Respostas HTTP"),
+    p(
+      "O ciclo de vida de uma requisição no Flask segue, de forma simplificada, o seguinte caminho: o servidor WSGI (por exemplo, Werkzeug em desenvolvimento, ou Gunicorn/uWSGI em produção) recebe a conexão HTTP bruta e a traduz para o ambiente WSGI (um dicionário com metadados da requisição). O Flask, ao receber esse ambiente, cria um objeto Request (da classe werkzeug.wrappers.Request, estendida por flask.Request) e o disponibiliza através de um mecanismo de contexto local à thread/tarefa (context locals), tornando-o acessível globalmente durante o processamento daquela requisição sem que seja necessário passá-lo explicitamente como argumento entre funções."
+    ),
+    h2("2.1 O objeto request"),
+    p(
+      "request é um proxy que aponta para o objeto de requisição atual. Embora pareça uma variável global comum, na realidade o Flask utiliza uma pilha de contexto (context stack) baseada em variáveis de contexto, garantindo que, mesmo em um servidor que atende múltiplas requisições concorrentes, cada uma enxergue apenas seus próprios dados de request, sem interferência entre threads ou tarefas assíncronas."
+    ),
+    bullet("request.method — o verbo HTTP utilizado (GET, POST, etc.)."),
+    bullet("request.args — dicionário (MultiDict) com os parâmetros da query string."),
+    bullet("request.form — dados enviados via formulário HTML (application/x-www-form-urlencoded ou multipart/form-data)."),
+    bullet("request.json / request.get_json() — corpo da requisição interpretado como JSON."),
+    bullet("request.headers — cabeçalhos HTTP recebidos."),
+    bullet("request.cookies — cookies enviados pelo cliente."),
+    bullet("request.files — arquivos enviados em upload."),
+    codeBlock([
+      "from flask import request",
+      "",
+      "@app.route('/buscar')",
+      "def buscar():",
+      "    termo = request.args.get('q', '')",
+      "    return f'Buscando por: {termo}'",
+      "",
+      "@app.route('/login', methods=['POST'])",
+      "def login():",
+      "    dados = request.get_json()",
+      "    usuario = dados.get('usuario')",
+      "    senha = dados.get('senha')",
+      "    return autenticar(usuario, senha)",
+    ]),
+    h2("2.2 O objeto response"),
+    p(
+      "Toda view function precisa produzir algo que o Flask converta em um objeto Response (também herdado de Werkzeug). O Flask é flexível quanto ao valor de retorno: uma string é convertida automaticamente em uma resposta com status 200 e Content-Type text/html; um dicionário é serializado automaticamente para JSON; uma tupla (corpo, status) ou (corpo, status, headers) permite definir o código de status e cabeçalhos adicionais; e é possível também construir explicitamente um objeto Response por meio de make_response(), útil quando se precisa manipular cookies ou cabeçalhos antes de retornar."
+    ),
+    codeBlock([
+      "from flask import make_response, jsonify",
+      "",
+      "@app.route('/status')",
+      "def status():",
+      "    return {'status': 'ok'}, 200   # dict -> JSON automaticamente",
+      "",
+      "@app.route('/relatorio')",
+      "def relatorio():",
+      "    resp = make_response('Conteúdo do relatório')",
+      "    resp.headers['Content-Type'] = 'text/plain'",
+      "    resp.set_cookie('ultimo_acesso', '2026-08-04')",
+      "    return resp",
+    ]),
+    h2("2.3 redirect()"),
+    p(
+      "A função redirect() constrói uma resposta HTTP de redirecionamento (por padrão, código 302 Found), definindo o cabeçalho Location com a URL de destino. É comumente combinada com url_for() para redirecionar o usuário para outra rota da própria aplicação, por exemplo após o envio bem-sucedido de um formulário (padrão conhecido como Post/Redirect/Get, que evita reenvio duplicado de formulários ao atualizar a página)."
+    ),
+    codeBlock([
+      "from flask import redirect, url_for",
+      "",
+      "@app.route('/entrar', methods=['POST'])",
+      "def entrar():",
+      "    autenticar_usuario(request.form)",
+      "    return redirect(url_for('painel'))",
+      "",
+      "@app.route('/painel')",
+      "def painel():",
+      "    return 'Bem-vindo ao painel'",
+    ]),
+    h2("2.4 abort()"),
+    p(
+      "A função abort() interrompe imediatamente a execução da view function, lançando uma exceção HTTPException correspondente ao código de status informado. O Flask captura essa exceção e gera automaticamente uma resposta de erro apropriada (por exemplo, uma página 404 padrão), podendo ainda ser customizada por meio de manipuladores de erro registrados com @app.errorhandler()."
+    ),
+    codeBlock([
+      "from flask import abort",
+      "",
+      "@app.route('/produto/<int:produto_id>')",
+      "def produto(produto_id):",
+      "    produto = buscar_no_banco(produto_id)",
+      "    if produto is None:",
+      "        abort(404)",
+      "    return produto",
+      "",
+      "@app.errorhandler(404)",
+      "def nao_encontrado(erro):",
+      "    return 'Recurso não encontrado', 404",
+    ]),
+    p(
+      "Em conjunto, request, response, redirect e abort formam o núcleo do modelo de comunicação HTTP do Flask: request representa a entrada, response representa a saída, e redirect/abort são mecanismos especializados para controlar o fluxo — desviando o cliente para outra URL ou interrompendo o processamento diante de uma condição excepcional."
+    ),
+  ];
+}
+
+module.exports = { section1, section2 };
